@@ -11,6 +11,15 @@
   var updatedEl = document.getElementById("updated");
   var statusEl = document.getElementById("status");
 
+  // Libellés paramétrables via des data-attributes sur <body>.
+  function bodyAttr(name, fallback) {
+    var v = document.body.getAttribute(name);
+    return v === null ? fallback : v;
+  }
+  var NOUN_SINGULAR = bodyAttr("data-noun-singular", "installation");
+  var NOUN_PLURAL = bodyAttr("data-noun-plural", "installations");
+  var TITLE_SUFFIX = bodyAttr("data-title-suffix", "au Luxembourg");
+
   function showStatus(message) {
     statusEl.textContent = message;
     statusEl.hidden = false;
@@ -27,8 +36,8 @@
     return d.toLocaleDateString("fr-LU", { day: "numeric", month: "long", year: "numeric" });
   }
 
-  function plural(n, word) {
-    return n + " " + word + (n > 1 ? "s" : "");
+  function plural(n) {
+    return n + " " + (n > 1 ? NOUN_PLURAL : NOUN_SINGULAR);
   }
 
   function renderTopbar(data) {
@@ -36,7 +45,7 @@
     strong.textContent = String(data.total);
     countEl.textContent = "";
     countEl.appendChild(strong);
-    countEl.appendChild(document.createTextNode(" installation" + (data.total > 1 ? "s" : "") + " au Luxembourg"));
+    countEl.appendChild(document.createTextNode(" " + (data.total > 1 ? NOUN_PLURAL : NOUN_SINGULAR) + (TITLE_SUFFIX ? " " + TITLE_SUFFIX : "")));
     updatedEl.textContent = "Mis à jour le " + formatDate(data.generated_at);
   }
 
@@ -89,7 +98,7 @@
     var size = total < 10 ? "s" : total < 50 ? "m" : "l";
     var px = { s: 40, m: 50, l: 60 }[size];
     return L.divIcon({
-      html: '<div class="cluster cluster--' + size + '" role="img" aria-label="' + plural(total, "installation") + '">' + total + "</div>",
+      html: '<div class="cluster cluster--' + size + '" role="img" aria-label="' + plural(total) + '">' + total + "</div>",
       className: "",
       iconSize: [px, px]
     });
@@ -111,14 +120,14 @@
     if (point.commune && point.commune !== point.localite) {
       html += '<p class="popup__sub">' + esc(point.commune) + "</p>";
     }
-    return html + '<p class="popup__line">' + plural(point.count, "installation") + "</p>";
+    return html + '<p class="popup__line">' + plural(point.count) + "</p>";
   }
 
   function createMarker(point) {
     // Leaflet rend l'icône focusable (tabindex=0, role=button) et ouvre la
     // popup sur Entrée ; `title` sert d'infobulle, `aria-label` de nom accessible
     // (sinon le badge numérique serait annoncé seul).
-    var label = point.localite + ", " + plural(point.count, "installation");
+    var label = point.localite + ", " + plural(point.count);
     var marker = L.marker([point.lat, point.lng], {
       icon: flagIcon(point),
       count: point.count,
@@ -177,6 +186,6 @@
     countEl.textContent = "Données indisponibles";
     updatedEl.textContent = "";
     var http = err && typeof err.message === "string" && err.message.indexOf("HTTP ") === 0;
-    showStatus("Impossible de charger les installations. Réessayez plus tard." + (http ? " (" + err.message + ")" : ""));
+    showStatus("Impossible de charger les " + NOUN_PLURAL + ". Réessayez plus tard." + (http ? " (" + err.message + ")" : ""));
   });
 })();
